@@ -8,8 +8,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const CLIENT_ID = 774ckgbyn2k9kq;
-const CLIENT_SECRET = WPL_AP1.MtmJrrtsCjup55Ac.xeQTKw==;
+const CLIENT_ID = "774ckgbyn2k9kq";
+const CLIENT_SECRET = "WPL_AP1.MtmJrrtsCjup55Ac.xeQTKw==";
 const REDIRECT_URI = "http://localhost:3000/callback"; // Update this to your production callback URL
 
 // Route pour échanger le code OAuth2 contre un access_token
