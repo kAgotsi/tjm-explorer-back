@@ -8,17 +8,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const CLIENT_ID = "774ckgbyn2k9kq";
-const CLIENT_SECRET = "WPL_AP1.MtmJrrtsCjup55Ac.xeQTKw==";
-const REDIRECT_URI = "http://localhost:3000/callback"; // Update this to your production callback URL
+// Ensure environment variables are loaded correctly
+const CLIENT_ID = process.env.LINKEDIN_CLIENT_ID;
+const CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET;
+const REDIRECT_URI = process.env.REDIRECT_URI || "http://localhost:3000/callback"; // Use environment variable fallback
 
-// Route pour échanger le code OAuth2 contre un access_token
+if (!CLIENT_ID || !CLIENT_SECRET) {
+  console.error("LinkedIn credentials are missing in environment variables");
+  process.exit(1); // Exit with error if credentials are missing
+}
+
+// Route to exchange OAuth2 code for an access token
 app.post("/auth/linkedin", async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(400).json({ error: "Code LinkedIn manquant" });
 
   try {
-    // 1️⃣ Échanger le code contre un access_token
+    // Exchange code for access token
     const tokenResponse = await axios.post("https://www.linkedin.com/oauth/v2/accessToken", null, {
       params: {
         grant_type: "authorization_code",
@@ -31,16 +37,15 @@ app.post("/auth/linkedin", async (req, res) => {
 
     const accessToken = tokenResponse.data.access_token;
 
-    // 2️⃣ Récupérer les données du profil LinkedIn
+    // Fetch LinkedIn profile data
     const profileResponse = await axios.get("https://api.linkedin.com/v2/me", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
-    // 3️⃣ Récupérer les expériences professionnelles
-    const experienceResponse = await axios.get(
-      "https://api.linkedin.com/v2/experience",
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+    // Fetch LinkedIn experiences
+    const experienceResponse = await axios.get("https://api.linkedin.com/v2/experience", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
 
     const experiences = experienceResponse.data.elements || [];
 
@@ -48,24 +53,25 @@ app.post("/auth/linkedin", async (req, res) => {
       return res.json({ profile: profileResponse.data, message: "Aucune expérience trouvée." });
     }
 
-    // 4️⃣ Vérifier le dernier poste (CDI ou Freelance)
-    const lastJob = experiences[0]; // Supposons trié du plus récent au plus ancien
+    // Check last job (Permanent or Freelance)
+    const lastJob = experiences[0];
 
     let requiresTJM = false;
     if (lastJob.contractType !== "CDI") {
       requiresTJM = true;
     }
 
+    // Send profile and experience details
     res.json({
       profile: profileResponse.data,
       experiences,
       requiresTJM,
     });
   } catch (error) {
-    console.error("Erreur OAuth LinkedIn:", error.response?.data || error.message);
-    res.status(500).json({ error: "Échec de l'authentification LinkedIn" });
+    console.error("Error during OAuth LinkedIn:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed LinkedIn authentication" });
   }
 });
 
-// Wrap the express app with serverless-http for Vercel compatibility
-module.exports.handler = serverless(app);
+// Export the app directly as the serverless handler
+module.exports = serverless(app);
