@@ -7,10 +7,10 @@
       }
     ],
     "routes": [
-      {
-        "src": "/auth/linkedin",
-        "dest": "/server.js"
-      }
-    ]
+        {
+          "src": "/",
+          "dest": "index.js"
+        }
+      ]
   }
   
