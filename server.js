@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
+const serverless = require("serverless-http");
 
 const app = express();
 app.use(cors());
@@ -9,7 +10,7 @@ app.use(express.json());
 
 const CLIENT_ID = process.env.LINKEDIN_CLIENT_ID;
 const CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET;
-const REDIRECT_URI = "http://localhost:3000/callback"; // Ajoutez cette URL dans LinkedIn
+const REDIRECT_URI = "http://localhost:3000/callback"; // Update this to your production callback URL
 
 // Route pour échanger le code OAuth2 contre un access_token
 app.post("/auth/linkedin", async (req, res) => {
@@ -66,4 +67,5 @@ app.post("/auth/linkedin", async (req, res) => {
   }
 });
 
-app.listen(5000, () => console.log("🚀 Serveur lancé sur http://localhost:5000"));
+// Wrap the express app with serverless-http for Vercel compatibility
+module.exports.handler = serverless(app);
